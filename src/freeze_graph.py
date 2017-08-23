@@ -28,13 +28,18 @@ from __future__ import division
 from __future__ import print_function
 
 from tensorflow.python.framework import graph_util
+from tensorflow.python.tools import optimize_for_inference_lib
 import tensorflow as tf
 import argparse
 import os
 import sys
 import facenet
+from google.protobuf import text_format
+
 
 def main(args):
+    os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID" 
+    os.environ["CUDA_VISIBLE_DEVICES"]="1"
     with tf.Graph().as_default():
         with tf.Session() as sess:
             # Load the model metagraph and checkpoint
@@ -60,6 +65,34 @@ def main(args):
         with tf.gfile.GFile(args.output_file, 'wb') as f:
             f.write(output_graph_def.SerializeToString())
         print("%d ops in the final graph: %s" % (len(output_graph_def.node), args.output_file))
+        
+        #inputs_graph_def = tf.GraphDef()
+        #with tf.gfile.Open(args.output_file, "r") as f:
+        #    data = f.read()
+        #    inputs_graph_def.ParseFromString(data)
+        #output_graph_def = optimize_for_inference_lib.optimize_for_inference(
+        #        inputs_graph_def,
+        #        ["input"], # an array of the input node(s)
+        #        ["embeddings"], # an array of output nodes
+        #        tf.float32.as_datatype_enum)
+        #for node in output_graph_def.node:
+        #    if node.op == "Switch":
+        #        node.op = "Identity"
+        #        del node.input[1]
+
+        #tf.train.write_graph(inputs_graph_def, "/home/dcek/models", "fixed_model.pb")
+        
+        #output_graph_def = optimize_for_inference_lib.optimize_for_inference(
+        #        inputs_graph_def,
+        #        ["input"], # an array of the input node(s)
+        #        ["embeddings"], # an array of output nodes
+        #        tf.float32.as_datatype_enum)
+
+        #Save the optimized graph
+
+        #f = tf.gfile.FastGFile(args.output_file, "w")
+        #f.write(output_graph_def.SerializeToString())
+        #print("%d ops in the final graph: %s" % (len(output_graph_def.node), args.output_file))
         
 def freeze_graph_def(sess, input_graph_def, output_node_names):
     for node in input_graph_def.node:

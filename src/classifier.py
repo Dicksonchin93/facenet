@@ -73,7 +73,7 @@ def main(args):
             embeddings = tf.get_default_graph().get_tensor_by_name("embeddings:0")
             phase_train_placeholder = tf.get_default_graph().get_tensor_by_name("phase_train:0")
             embedding_size = embeddings.get_shape()[1]
-            
+            print (embedding_size)
             # Run forward pass to calculate embeddings
             print('Calculating features for images')
             nrof_images = len(paths)
@@ -83,12 +83,14 @@ def main(args):
                 start_index = i*args.batch_size
                 end_index = min((i+1)*args.batch_size, nrof_images)
                 paths_batch = paths[start_index:end_index]
+                print (paths_batch)
                 images = facenet.load_data(paths_batch, False, False, args.image_size)
+                print (images)
                 feed_dict = { images_placeholder:images, phase_train_placeholder:False }
                 emb_array[start_index:end_index,:] = sess.run(embeddings, feed_dict=feed_dict)
             
             classifier_filename_exp = os.path.expanduser(args.classifier_filename)
-
+            print (emb_array.shape)
             if (args.mode=='TRAIN'):
                 # Train classifier
                 print('Training classifier')

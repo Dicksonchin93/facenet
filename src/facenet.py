@@ -435,7 +435,7 @@ def calculate_roc(thresholds, embeddings1, embeddings2, actual_issame, nrof_fold
           
     tpr = np.mean(tprs,0)
     fpr = np.mean(fprs,0)
-    return tpr, fpr, accuracy
+    return tpr, fpr, accuracy, thresholds[best_threshold_index]
 
 def calculate_accuracy(threshold, dist, actual_issame):
     predict_issame = np.less(dist, threshold)

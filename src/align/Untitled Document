@@ -1,0 +1,1 @@
+python align/align_dataset_mtcnn.py ../data/images ../data/images/aligned

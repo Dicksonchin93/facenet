@@ -31,12 +31,15 @@ import os
 import argparse
 import tensorflow as tf
 import numpy as np
+#sys.path.append("../")
 import facenet
 import align.detect_face
 import random
 from time import sleep
 
 def main(args):
+    os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"]="0"
     sleep(random.random())
     output_dir = os.path.expanduser(args.output_dir)
     if not os.path.exists(output_dir):
@@ -45,6 +48,7 @@ def main(args):
     src_path,_ = os.path.split(os.path.realpath(__file__))
     facenet.store_revision_info(src_path, output_dir, ' '.join(sys.argv))
     dataset = facenet.get_dataset(args.input_dir)
+    paths, labels = facenet.get_image_paths_and_labels(dataset)
     
     print('Creating networks and loading parameters')
     
@@ -74,10 +78,12 @@ def main(args):
                 if args.random_order:
                     random.shuffle(cls.image_paths)
             for image_path in cls.image_paths:
+                if (nrof_images_total%1000 == 0):
+                    print("{}".format(nrof_images_total))
                 nrof_images_total += 1
                 filename = os.path.splitext(os.path.split(image_path)[1])[0]
-                output_filename = os.path.join(output_class_dir, filename+'.png')
-                print(image_path)
+                output_filename = os.path.join(output_class_dir, filename+'.jpg')
+                #print(image_path)
                 if not os.path.exists(output_filename):
                     try:
                         img = misc.imread(image_path)
@@ -132,7 +138,7 @@ def parse_arguments(argv):
     parser.add_argument('--image_size', type=int,
         help='Image size (height, width) in pixels.', default=182)
     parser.add_argument('--margin', type=int,
-        help='Margin for the crop around the bounding box (height, width) in pixels.', default=44)
+        help='Margin for the crop around the bounding box (height, width) in pixels.', default=1)
     parser.add_argument('--random_order', 
         help='Shuffles the order of images to enable alignment using multiple processes.', action='store_true')
     parser.add_argument('--gpu_memory_fraction', type=float,

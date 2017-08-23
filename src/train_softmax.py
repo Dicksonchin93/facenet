@@ -205,6 +205,7 @@ def main(args):
 
             if pretrained_model:
                 print('Restoring pretrained model: %s' % pretrained_model)
+                saver = tf.train.import_meta_graph('/home/dcek/models/facenet/20170814-121751/model-20170814-121751.meta')
                 saver.restore(sess, pretrained_model)
 
             # Training and validation loop
@@ -308,7 +309,7 @@ def evaluate(sess, enqueue_op, image_paths_placeholder, labels_placeholder, phas
     # Enqueue one epoch of image paths and labels
     labels_array = np.expand_dims(np.arange(0,len(image_paths)),1)
     image_paths_array = np.expand_dims(np.array(image_paths),1)
-    sess.run(enqueue_op, {image_paths_placeholder: image_paths_array, labels_placeholder: labels_array})
+    sess.run(enqueue_op, feed_dict = {image_paths_placeholder: image_paths_array, labels_placeholder: labels_array})
     
     embedding_size = embeddings.get_shape()[1]
     nrof_images = len(actual_issame)*2
@@ -323,10 +324,11 @@ def evaluate(sess, enqueue_op, image_paths_placeholder, labels_placeholder, phas
         emb_array[lab] = emb
         
     assert np.array_equal(lab_array, np.arange(nrof_images))==True, 'Wrong labels used for evaluation, possibly caused by training examples left in the input pipeline'
-    _, _, accuracy, val, val_std, far = lfw.evaluate(emb_array, actual_issame, nrof_folds=nrof_folds)
+    _, _, accuracy, val, val_std, far, threshold = lfw.evaluate(emb_array, actual_issame, nrof_folds=nrof_folds)
     
     print('Accuracy: %1.3f+-%1.3f' % (np.mean(accuracy), np.std(accuracy)))
     print('Validation rate: %2.5f+-%2.5f @ FAR=%2.5f' % (val, val_std, far))
+    print("Best Threshold = {}".format(threshold))
     lfw_time = time.time() - start_time
     # Add validation loss and accuracy to summary
     summary = tf.Summary()

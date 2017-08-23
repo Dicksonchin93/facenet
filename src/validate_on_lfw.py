@@ -79,10 +79,14 @@ def main(args):
                 feed_dict = { images_placeholder:images, phase_train_placeholder:False }
                 emb_array[start_index:end_index,:] = sess.run(embeddings, feed_dict=feed_dict)
         
-            tpr, fpr, accuracy, val, val_std, far = lfw.evaluate(emb_array, 
+            tpr, fpr, accuracy, val, val_std, far, threshold = lfw.evaluate(emb_array, 
                 actual_issame, nrof_folds=args.lfw_nrof_folds)
 
             print('Accuracy: %1.3f+-%1.3f' % (np.mean(accuracy), np.std(accuracy)))
+            for idx,acc in enumerate(accuracy):
+                print("Accuracy of {} fold = {} ".format(idx+1, acc))
+                
+            print("Best Threshold = {}".format(threshold))
             print('Validation rate: %2.5f+-%2.5f @ FAR=%2.5f' % (val, val_std, far))
 
             auc = metrics.auc(fpr, tpr)

@@ -34,10 +34,18 @@ import os
 import argparse
 import facenet
 import align.detect_face
+import time
+from tensorflow.python.client import device_lib
+#print (device_lib.list_local_devices())
+
 
 def main(args):
-
+    os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"]="1"
+    start = time.time()
     images = load_and_align_data(args.image_files, args.image_size, args.margin, args.gpu_memory_fraction)
+    print("align took {} seconds".format(time.time() - start))
+    start = time.time()
     with tf.Graph().as_default():
 
         with tf.Session() as sess:
@@ -53,7 +61,7 @@ def main(args):
             # Run forward pass to calculate embeddings
             feed_dict = { images_placeholder: images, phase_train_placeholder:False }
             emb = sess.run(embeddings, feed_dict=feed_dict)
-            
+            print (emb.shape)            
             nrof_images = len(args.image_files)
 
             print('Images:')
@@ -73,7 +81,7 @@ def main(args):
                     dist = np.sqrt(np.sum(np.square(np.subtract(emb[i,:], emb[j,:]))))
                     print('  %1.4f  ' % dist, end='')
                 print('')
-            
+        print("recognition took {} seconds".format(time.time() - start))    
             
 def load_and_align_data(image_paths, image_size, margin, gpu_memory_fraction):
 
@@ -85,11 +93,13 @@ def load_and_align_data(image_paths, image_size, margin, gpu_memory_fraction):
     with tf.Graph().as_default():
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=gpu_memory_fraction)
         sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, log_device_placement=False))
+       # start = time.time()
         with sess.as_default():
             pnet, rnet, onet = align.detect_face.create_mtcnn(sess, None)
-  
+       # print("loading mtcnn took {} seconds".format(time.time() - start))
     nrof_samples = len(image_paths)
     img_list = [None] * nrof_samples
+    start = time.time()
     for i in range(nrof_samples):
         img = misc.imread(os.path.expanduser(image_paths[i]))
         img_size = np.asarray(img.shape)[0:2]
@@ -104,7 +114,10 @@ def load_and_align_data(image_paths, image_size, margin, gpu_memory_fraction):
         aligned = misc.imresize(cropped, (image_size, image_size), interp='bilinear')
         prewhitened = facenet.prewhiten(aligned)
         img_list[i] = prewhitened
+    #print (img_list)
     images = np.stack(img_list)
+    print (images) 
+    print("detecting with mtcnn took {} seconds".format(time.time() - start))
     return images
 
 def parse_arguments(argv):
